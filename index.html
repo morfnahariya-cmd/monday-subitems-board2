@@ -30,7 +30,7 @@
             position: relative;
         }
 
-        /* באנר הצלחה ירוק בראש העמוד */
+        /* באנר הצלחה ירוק */
         .success-banner {
             display: none;
             background-color: var(--monday-green-bg);
@@ -46,7 +46,7 @@
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
 
-        /* גריד הסטטיסטיקה - הפרויקטים בימין, המשתמשים בשמאל */
+        /* גריד הסטטיסטיקה */
         .stats-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -87,7 +87,6 @@
             box-shadow: 0 1px 3px rgba(0,0,0,0.02);
         }
 
-        /* עיצוב גרפי של כפתור ההוספה */
         .main-add-btn {
             background-color: var(--monday-blue);
             color: white;
@@ -184,7 +183,6 @@
             color: #b0b1bc;
         }
 
-        /* כפתורי הפעולה בתחתית הפופ-אפ */
         .modal-footer {
             padding: 15px 24px 24px 24px;
             border-top: 1px solid #f0f1f3;
@@ -208,7 +206,6 @@
             order: 2;
         }
 
-        /* עיצוב כפתור במצב טעינה */
         .btn-confirm.loading {
             background-color: var(--monday-green-loading) !important;
             cursor: not-allowed;
@@ -226,7 +223,6 @@
             order: 1;
         }
 
-        /* ספינר הטעינה */
         .spinner {
             display: none;
             width: 16px;
@@ -241,14 +237,18 @@
             to { transform: rotate(360deg); }
         }
     </style>
+    <!-- טעינת ה-SDK הרשמי של monday -->
+    <script src="https://cdn.jsdelivr.net/npm/monday-sdk-js/dist/main.js"></script>
 </head>
 <body>
 
     <div class="container">
+        <!-- באנר הצלחה ירוק -->
         <div id="successBanner" class="success-banner">
             <span>המשימה נוספה בהצלחה! ✓</span>
         </div>
 
+        <!-- קוביות סטטיסטיקה -->
         <div class="stats-grid">
             <div class="stat-card">
                 <div id="projects-count" class="stat-value">טוען...</div>
@@ -260,6 +260,7 @@
             </div>
         </div>
 
+        <!-- כפתור הוספת המשימה המרכזי -->
         <div class="button-zone">
             <button class="main-add-btn" onclick="openModal()">
                 <span class="plus-icon">+</span>
@@ -268,6 +269,7 @@
         </div>
     </div>
 
+    <!-- מודאל פופ-אפ -->
     <div id="modalOverlay" class="modal-overlay" onclick="closeModal()"></div>
     <div id="taskModal" class="modal-box">
         <div class="modal-header">
@@ -303,17 +305,38 @@
     </div>
 
     <script>
-        const BOARD_ID = "5097106853";
-        // פה להדביק את המאנדיי טוקן שלך בתוך הגרשיים
-        const MONDAY_TOKEN = "eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjY2MzM4OTA1MiwiYWFpIjoxMSwidWlkIjoxMDMyMzkyMjEsImlhZCI6IjIwMjYtMDUtMjdUMDU6MDE6MDkuMDAwWiIsInBlciI6Im1lOndyaXRlIiwiYWN0aWQiOjM0OTk3NTEwLCJyZ24iOiJldWMxIn0.7lm65-gCEmkWPtzTxBpsnzZOf5NEbircT8FiLEnMwx0"; 
+        const monday = window.mondaySdk();
+        const MONDAY_TOKEN = "eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjY2MzM4OTA1MiwiYWFpIjoxMSwidWlkIjoxMDMyMzkyMjEsImlhZCI6IjIwMjYtMDUtMjdUMDU6MDE6MDkuMDAwWiIsInBlciI6Im1lOndyaXRlIiwiYWN0aWQiOjM0OTk3NTEwLCJyZ24iOiJldWMxIn0.7lm65-gCEmkWPtzTxBpsnzZOf5NEbircT8FiLEnMwx0"; // <--- להדביק את הטוקן שלך כאן בתוך הגרשיים
         
+        let currentBoardId = "5097106853"; // לוח היתרי בניה כברירת מחדל
         let allProjects = [];
 
-        // טעינת הנתונים מהלוח ורשימת המשתמשים בחשבון
+        function initializeApp() {
+            // 1. בדיקה אם יש ID של לוח בכתובת ה-URL (מתאים לפלאפון)
+            const urlParams = new URLSearchParams(window.location.search);
+            const boardParam = urlParams.get('boardId');
+            
+            if (boardParam) {
+                currentBoardId = boardParam;
+            }
+
+            // 2. האזנה ל-monday בתוך ה-iFrame (מתאים למחשב)
+            monday.listen("context", res => {
+                if (res.data && res.data.boardId) {
+                    currentBoardId = res.data.boardId.toString();
+                } else if (res.data && res.data.boardIds && res.data.boardIds[0]) {
+                    currentBoardId = res.data.boardIds[0].toString();
+                }
+                loadBoardData();
+            });
+            
+            // טעינה ראשונית
+            loadBoardData();
+        }
+
         async function loadBoardData() {
-            // שינוי השאילתה ל-users כללית ללא הגדרת פילטר סוג כדי למנוע חסימת הרשאות
             const query = `query { 
-                boards(ids: ${BOARD_ID}) { 
+                boards(ids: ${currentBoardId}) { 
                     items_page(limit: 100) { 
                         items { id name } 
                     } 
@@ -337,7 +360,6 @@
                 
                 const data = await response.json();
                 
-                // 1. טעינת פרויקטים
                 if (data.data && data.data.boards && data.data.boards[0]) {
                     allProjects = data.data.boards[0].items_page.items;
                     document.getElementById("projects-count").innerText = allProjects.length;
@@ -352,7 +374,6 @@
                     });
                 }
 
-                // 2. טעינת משתמשים לרשימה ולמספר הסטטיסטיקה
                 if (data.data && data.data.users) {
                     const usersList = data.data.users;
                     document.getElementById("users-count").innerText = usersList.length;
@@ -381,7 +402,7 @@
         function closeModal() {
             document.getElementById("taskModal").style.display = "none";
             document.getElementById("modalOverlay").style.display = "none";
-            resetConfirmButton(); // איפוס מצב כפתור במידה ונסגר
+            resetConfirmButton();
         }
 
         function showSuccessBanner() {
@@ -403,7 +424,6 @@
             spinner.style.display = "none";
         }
 
-        // יצירת תת-המשימה (Subitem) ושיוך לאדם אחראי
         async function submitSubitem() {
             const parentItemId = document.getElementById("projectSelect").value;
             const subitemName = document.getElementById("subitemName").value;
@@ -414,7 +434,6 @@
                 return;
             }
 
-            // הפעלת מצב האנימציה והטעינה בכפתור
             const btnConfirm = document.getElementById("btnConfirm");
             const btnText = document.getElementById("btnText");
             const spinner = document.getElementById("spinner");
@@ -424,7 +443,6 @@
             btnText.innerText = "יוצר משימה...";
             spinner.style.display = "inline-block";
 
-            // בניית הגדרת עמודת האחראי במידה ונבחר אדם
             let columnValuesSection = "";
             if (assignedUserId) {
                 const columnData = JSON.stringify({ person: { personsAndTeams: [{ id: parseInt(assignedUserId), kind: "person" }] } });
@@ -456,7 +474,7 @@
                     document.getElementById("projectSelect").value = "";
                     document.getElementById("userSelect").value = "";
                 } else {
-                    alert("שגיאה ביצירת תת-המשימה. ודאי שעמודת האחראי (person) קיימת ב-Subitems.");
+                    alert("שגיאה ביצירת תת-המשימה. ודאי שעמודת האחראי (person) קיימת ב-Subitems של לוח זה.");
                 }
             } catch (error) {
                 console.error(error);
@@ -466,7 +484,7 @@
             }
         }
 
-        loadBoardData();
+        initializeApp();
     </script>
 </body>
 </html>
