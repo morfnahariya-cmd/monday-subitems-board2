@@ -337,7 +337,7 @@
         async function loadBoardData() {
             const query = `query { 
                 boards(ids: ${currentBoardId}) { 
-                    items_page(limit: 100) { 
+                    items_page(limit: 500) { 
                         items { id name } 
                     } 
                 }
