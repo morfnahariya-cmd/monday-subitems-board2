@@ -30,7 +30,6 @@
             position: relative;
         }
 
-        /* באנר הצלחה ירוק */
         .success-banner {
             display: none;
             background-color: var(--monday-green-bg);
@@ -46,7 +45,6 @@
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
 
-        /* גריד הסטטיסטיקה */
         .stats-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -75,7 +73,6 @@
             color: var(--text-muted);
         }
 
-        /* אזור הכפתור המרכזי */
         .button-zone {
             background: #ffffff;
             border-radius: 8px;
@@ -112,7 +109,6 @@
             color: rgba(255, 255, 255, 0.85);
         }
 
-        /* מודאל פופ-אפ */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -301,12 +297,11 @@
         const monday = window.mondaySdk();
         const MONDAY_TOKEN = "eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjY2MzM4OTA1MiwiYWFpIjoxMSwidWlkIjoxMDMyMzkyMjEsImlhZCI6IjIwMjYtMDUtMjdUMDU6MDE6MDkuMDAwWiIsInBlciI6Im1lOndyaXRlIiwiYWN0aWQiOjM0OTk3NTEwLCJyZ24iOiJldWMxIn0.7lm65-gCEmkWPtzTxBpsnzZOf5NEbircT8FiLEnMwx0"; // <--- להדביק את הטוקן האישי שלך כאן בתוך הגרשיים
         
-        let currentBoardId = "5095918038"; // לוח ברירת מחדל
+        let currentBoardId = "5095918038"; 
         let allProjects = [];
         let allUsers = [];
 
         function initializeApp() {
-            // 1. בדיקה אם יש ID של לוח בכתובת ה-URL (מתאים לפלאפון ולדאשבורדים מקובעים)
             const urlParams = new URLSearchParams(window.location.search);
             const boardParam = urlParams.get('boardId');
             
@@ -314,7 +309,6 @@
                 currentBoardId = boardParam;
             }
 
-            // 2. האזנה ל-monday בתוך ה-iFrame (מתאים למחשב)
             monday.listen("context", res => {
                 if (res.data && res.data.boardId) {
                     currentBoardId = res.data.boardId.toString();
@@ -324,7 +318,6 @@
                 loadBoardData();
             });
             
-            // טעינה ראשונית
             loadBoardData();
         }
 
@@ -362,8 +355,8 @@
                     projectDatalist.innerHTML = '';
                     allProjects.forEach(proj => {
                         const opt = document.createElement("option");
-                        opt.value = proj.name; // מציג את השם להקלדה
-                        opt.dataset.id = proj.id; // שומר את ה-ID ברקע
+                        opt.value = proj.name; 
+                        opt.dataset.id = proj.id; 
                         projectDatalist.appendChild(opt);
                     });
                 }
@@ -376,8 +369,8 @@
                     userDatalist.innerHTML = '';
                     allUsers.forEach(user => {
                         const opt = document.createElement("option");
-                        opt.value = user.name; // מציג את השם להקלדה
-                        opt.dataset.id = user.id; // שומר את ה-ID ברקע
+                        opt.value = user.name; 
+                        opt.dataset.id = user.id; 
                         userDatalist.appendChild(opt);
                     });
                 }
@@ -423,7 +416,6 @@
             const userInputValue = document.getElementById("userInput").value;
             const subitemName = document.getElementById("subitemName").value;
 
-            // מציאת ה-ID המתאים מתוך ה-datalist לפי השם שהוקלד
             const projectOption = Array.from(document.querySelectorAll('#projectDatalist option'))
                 .find(opt => opt.value === projectInputValue);
             const parentItemId = projectOption ? projectOption.dataset.id : null;
