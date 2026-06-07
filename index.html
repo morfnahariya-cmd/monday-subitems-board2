@@ -168,7 +168,7 @@
             margin-right: 3px;
         }
 
-        .form-group input, .form-group select {
+        .form-group input {
             width: 100%;
             padding: 12px;
             font-size: 15px;
@@ -237,18 +237,15 @@
             to { transform: rotate(360deg); }
         }
     </style>
-    <!-- טעינת ה-SDK הרשמי של monday -->
     <script src="https://cdn.jsdelivr.net/npm/monday-sdk-js/dist/main.js"></script>
 </head>
 <body>
 
     <div class="container">
-        <!-- באנר הצלחה ירוק -->
         <div id="successBanner" class="success-banner">
             <span>המשימה נוספה בהצלחה! ✓</span>
         </div>
 
-        <!-- קוביות סטטיסטיקה -->
         <div class="stats-grid">
             <div class="stat-card">
                 <div id="projects-count" class="stat-value">טוען...</div>
@@ -260,7 +257,6 @@
             </div>
         </div>
 
-        <!-- כפתור הוספת המשימה המרכזי -->
         <div class="button-zone">
             <button class="main-add-btn" onclick="openModal()">
                 <span class="plus-icon">+</span>
@@ -269,7 +265,6 @@
         </div>
     </div>
 
-    <!-- מודאל פופ-אפ -->
     <div id="modalOverlay" class="modal-overlay" onclick="closeModal()"></div>
     <div id="taskModal" class="modal-box">
         <div class="modal-header">
@@ -283,16 +278,14 @@
             
             <div class="form-group">
                 <label>בחר פרויקט<span class="required">*</span></label>
-                <select id="projectSelect">
-                    <option value="">בחר פרויקט מהרשימה</option>
-                </select>
+                <input type="text" id="projectInput" list="projectDatalist" placeholder="הקלידי לחיפוש פרויקט...">
+                <datalist id="projectDatalist"></datalist>
             </div>
 
             <div class="form-group">
                 <label>בחר אדם אחראי (אופציונלי)</label>
-                <select id="userSelect">
-                    <option value="">טוען רשימת אנשים...</option>
-                </select>
+                <input type="text" id="userInput" list="userDatalist" placeholder="הקלידי לחיפוש אדם...">
+                <datalist id="userDatalist"></datalist>
             </div>
         </div>
         <div class="modal-footer">
@@ -306,13 +299,14 @@
 
     <script>
         const monday = window.mondaySdk();
-        const MONDAY_TOKEN = "eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjY2MzM4OTA1MiwiYWFpIjoxMSwidWlkIjoxMDMyMzkyMjEsImlhZCI6IjIwMjYtMDUtMjdUMDU6MDE6MDkuMDAwWiIsInBlciI6Im1lOndyaXRlIiwiYWN0aWQiOjM0OTk3NTEwLCJyZ24iOiJldWMxIn0.7lm65-gCEmkWPtzTxBpsnzZOf5NEbircT8FiLEnMwx0"; // <--- להדביק את הטוקן שלך כאן בתוך הגרשיים
+        const MONDAY_TOKEN = "eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjY2MzM4OTA1MiwiYWFpIjoxMSwidWlkIjoxMDMyMzkyMjEsImlhZCI6IjIwMjYtMDUtMjdUMDU6MDE6MDkuMDAwWiIsInBlciI6Im1lOndyaXRlIiwiYWN0aWQiOjM0OTk3NTEwLCJyZ24iOiJldWMxIn0.7lm65-gCEmkWPtzTxBpsnzZOf5NEbircT8FiLEnMwx0"; // <--- להדביק את הטוקן האישי שלך כאן בתוך הגרשיים
         
-        let currentBoardId = "5097106853"; // לוח היתרי בניה כברירת מחדל
+        let currentBoardId = "5095918038"; // לוח ברירת מחדל
         let allProjects = [];
+        let allUsers = [];
 
         function initializeApp() {
-            // 1. בדיקה אם יש ID של לוח בכתובת ה-URL (מתאים לפלאפון)
+            // 1. בדיקה אם יש ID של לוח בכתובת ה-URL (מתאים לפלאפון ולדאשבורדים מקובעים)
             const urlParams = new URLSearchParams(window.location.search);
             const boardParam = urlParams.get('boardId');
             
@@ -364,27 +358,27 @@
                     allProjects = data.data.boards[0].items_page.items;
                     document.getElementById("projects-count").innerText = allProjects.length;
                     
-                    const projectSelect = document.getElementById("projectSelect");
-                    projectSelect.innerHTML = '<option value="">בחר פרויקט מהרשימה</option>';
+                    const projectDatalist = document.getElementById("projectDatalist");
+                    projectDatalist.innerHTML = '';
                     allProjects.forEach(proj => {
                         const opt = document.createElement("option");
-                        opt.value = proj.id;
-                        opt.innerText = proj.name;
-                        projectSelect.appendChild(opt);
+                        opt.value = proj.name; // מציג את השם להקלדה
+                        opt.dataset.id = proj.id; // שומר את ה-ID ברקע
+                        projectDatalist.appendChild(opt);
                     });
                 }
 
                 if (data.data && data.data.users) {
-                    const usersList = data.data.users;
-                    document.getElementById("users-count").innerText = usersList.length;
+                    allUsers = data.data.users;
+                    document.getElementById("users-count").innerText = allUsers.length;
                     
-                    const userSelect = document.getElementById("userSelect");
-                    userSelect.innerHTML = '<option value="">ללא אחראי</option>';
-                    usersList.forEach(user => {
+                    const userDatalist = document.getElementById("userDatalist");
+                    userDatalist.innerHTML = '';
+                    allUsers.forEach(user => {
                         const opt = document.createElement("option");
-                        opt.value = user.id;
-                        opt.innerText = user.name;
-                        userSelect.appendChild(opt);
+                        opt.value = user.name; // מציג את השם להקלדה
+                        opt.dataset.id = user.id; // שומר את ה-ID ברקע
+                        userDatalist.appendChild(opt);
                     });
                 }
             } catch (error) {
@@ -425,12 +419,21 @@
         }
 
         async function submitSubitem() {
-            const parentItemId = document.getElementById("projectSelect").value;
+            const projectInputValue = document.getElementById("projectInput").value;
+            const userInputValue = document.getElementById("userInput").value;
             const subitemName = document.getElementById("subitemName").value;
-            const assignedUserId = document.getElementById("userSelect").value;
+
+            // מציאת ה-ID המתאים מתוך ה-datalist לפי השם שהוקלד
+            const projectOption = Array.from(document.querySelectorAll('#projectDatalist option'))
+                .find(opt => opt.value === projectInputValue);
+            const parentItemId = projectOption ? projectOption.dataset.id : null;
+
+            const userOption = Array.from(document.querySelectorAll('#userDatalist option'))
+                .find(opt => opt.value === userInputValue);
+            const assignedUserId = userOption ? userOption.dataset.id : null;
 
             if (!subitemName.trim() || !parentItemId) {
-                alert("אנא מלאי את כל שדות החובה המסומנים בכוכבית");
+                alert("אנא מלאי את שדות החובה וודאי שבחרת פרויקט קיים מתוך הרשימה");
                 return;
             }
 
@@ -471,8 +474,8 @@
                     closeModal();
                     showSuccessBanner();
                     document.getElementById("subitemName").value = "";
-                    document.getElementById("projectSelect").value = "";
-                    document.getElementById("userSelect").value = "";
+                    document.getElementById("projectInput").value = "";
+                    document.getElementById("userInput").value = "";
                 } else {
                     alert("שגיאה ביצירת תת-המשימה. ודאי שעמודת האחראי (person) קיימת ב-Subitems של לוח זה.");
                 }
