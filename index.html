@@ -103,12 +103,6 @@
             background-color: var(--monday-blue-hover);
         }
 
-        .main-add-btn .plus-icon {
-            font-size: 20px;
-            font-weight: 400;
-            color: rgba(255, 255, 255, 0.85);
-        }
-
         .modal-overlay {
             display: none;
             position: fixed;
@@ -129,7 +123,7 @@
             z-index: 1000;
             width: 90%;
             max-width: 500px;
-            overflow: hidden;
+            overflow: visible;
         }
 
         .modal-header {
@@ -149,6 +143,7 @@
 
         .form-group {
             margin-bottom: 20px;
+            position: relative;
         }
 
         .form-group label {
@@ -175,8 +170,40 @@
             background-color: #ffffff;
         }
 
-        .form-group input::placeholder {
-            color: #b0b1bc;
+        .custom-dropdown {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: #ffffff;
+            border: 1px solid var(--monday-blue);
+            border-radius: 0 0 4px 4px;
+            max-height: 180px;
+            overflow-y: auto;
+            z-index: 1010;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            padding: 0;
+            margin: 0;
+            list-style: none;
+        }
+
+        .custom-dropdown li {
+            padding: 10px 12px;
+            font-size: 14px;
+            cursor: pointer;
+            color: var(--text-main);
+            text-align: right;
+            border-bottom: 1px solid #f0f1f3;
+        }
+
+        .custom-dropdown li:last-child {
+            border-bottom: none;
+        }
+
+        .custom-dropdown li:hover {
+            background-color: #f0f4f9;
+            color: var(--monday-blue);
         }
 
         .modal-footer {
@@ -274,14 +301,14 @@
             
             <div class="form-group">
                 <label>בחר פרויקט<span class="required">*</span></label>
-                <input type="text" id="projectInput" list="projectDatalist" placeholder="הקלידי לחיפוש פרויקט...">
-                <datalist id="projectDatalist"></datalist>
+                <input type="text" id="projectInput" placeholder="הקלידי לחיפוש פרויקט..." autocomplete="off">
+                <ul id="projectList" class="custom-dropdown"></ul>
             </div>
 
             <div class="form-group">
                 <label>בחר אדם אחראי (אופציונלי)</label>
-                <input type="text" id="userInput" list="userDatalist" placeholder="הקלידי לחיפוש אדם...">
-                <datalist id="userDatalist"></datalist>
+                <input type="text" id="userInput" placeholder="הקלידי לחיפוש אדם..." autocomplete="off">
+                <ul id="userList" class="custom-dropdown"></ul>
             </div>
         </div>
         <div class="modal-footer">
@@ -300,6 +327,9 @@
         let currentBoardId = "5095918038"; 
         let allProjects = [];
         let allUsers = [];
+        
+        let selectedProjectId = null;
+        let selectedUserId = null;
 
         function initializeApp() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -319,6 +349,7 @@
             });
             
             loadBoardData();
+            setupCustomDropdowns();
         }
 
         async function loadBoardData() {
@@ -350,35 +381,111 @@
                 if (data.data && data.data.boards && data.data.boards[0]) {
                     allProjects = data.data.boards[0].items_page.items;
                     document.getElementById("projects-count").innerText = allProjects.length;
-                    
-                    const projectDatalist = document.getElementById("projectDatalist");
-                    projectDatalist.innerHTML = '';
-                    allProjects.forEach(proj => {
-                        const opt = document.createElement("option");
-                        opt.value = proj.name; 
-                        opt.dataset.id = proj.id; 
-                        projectDatalist.appendChild(opt);
-                    });
                 }
 
                 if (data.data && data.data.users) {
                     allUsers = data.data.users;
                     document.getElementById("users-count").innerText = allUsers.length;
-                    
-                    const userDatalist = document.getElementById("userDatalist");
-                    userDatalist.innerHTML = '';
-                    allUsers.forEach(user => {
-                        const opt = document.createElement("option");
-                        opt.value = user.name; 
-                        opt.dataset.id = user.id; 
-                        userDatalist.appendChild(opt);
-                    });
                 }
             } catch (error) {
                 console.error(error);
                 document.getElementById("projects-count").innerText = "שגיאה";
                 document.getElementById("users-count").innerText = "שגיאה";
             }
+        }
+
+        function setupCustomDropdowns() {
+            const projInput = document.getElementById("projectInput");
+            const projList = document.getElementById("projectList");
+            const userInput = document.getElementById("userInput");
+            const userList = document.getElementById("userList");
+
+            projInput.addEventListener("input", () => {
+                const val = projInput.value.trim().toLowerCase();
+                projList.innerHTML = "";
+                selectedProjectId = null;
+
+                const filtered = allProjects.filter(p => p.name.toLowerCase().includes(val));
+                
+                if (filtered.length > 0 && val !== "") {
+                    projList.style.display = "block";
+                    filtered.forEach(p => {
+                        const li = document.createElement("li");
+                        li.innerText = p.name;
+                        li.addEventListener("click", () => {
+                            projInput.value = p.name;
+                            selectedProjectId = p.id;
+                            projList.style.display = "none";
+                        });
+                        projList.appendChild(li);
+                    });
+                } else {
+                    projList.style.display = "none";
+                }
+            });
+
+            projInput.addEventListener("focus", () => {
+                if (projInput.value.trim() === "" && allProjects.length > 0) {
+                    projList.innerHTML = "";
+                    projList.style.display = "block";
+                    allProjects.forEach(p => {
+                        const li = document.createElement("li");
+                        li.innerText = p.name;
+                        li.addEventListener("click", () => {
+                            projInput.value = p.name;
+                            selectedProjectId = p.id;
+                            projList.style.display = "none";
+                        });
+                        projList.appendChild(li);
+                    });
+                }
+            });
+
+            userInput.addEventListener("input", () => {
+                const val = userInput.value.trim().toLowerCase();
+                userList.innerHTML = "";
+                selectedUserId = null;
+
+                const filtered = allUsers.filter(u => u.name.toLowerCase().includes(val));
+                
+                if (filtered.length > 0 && val !== "") {
+                    userList.style.display = "block";
+                    filtered.forEach(u => {
+                        const li = document.createElement("li");
+                        li.innerText = u.name;
+                        li.addEventListener("click", () => {
+                            userInput.value = u.name;
+                            selectedUserId = u.id;
+                            userList.style.display = "none";
+                        });
+                        userList.appendChild(li);
+                    });
+                } else {
+                    userList.style.display = "none";
+                }
+            });
+
+            userInput.addEventListener("focus", () => {
+                if (userInput.value.trim() === "" && allUsers.length > 0) {
+                    userList.innerHTML = "";
+                    userList.style.display = "block";
+                    allUsers.forEach(u => {
+                        const li = document.createElement("li");
+                        li.innerText = u.name;
+                        li.addEventListener("click", () => {
+                            userInput.value = u.name;
+                            selectedUserId = u.id;
+                            userList.style.display = "none";
+                        });
+                        userList.appendChild(li);
+                    });
+                }
+            });
+
+            document.addEventListener("click", (e) => {
+                if (e.target !== projInput) projList.style.display = "none";
+                if (e.target !== userInput) userList.style.display = "none";
+            });
         }
 
         function openModal() {
@@ -389,6 +496,8 @@
         function closeModal() {
             document.getElementById("taskModal").style.display = "none";
             document.getElementById("modalOverlay").style.display = "none";
+            document.getElementById("projectList").style.display = "none";
+            document.getElementById("userList").style.display = "none";
             resetConfirmButton();
         }
 
@@ -412,21 +521,23 @@
         }
 
         async function submitSubitem() {
-            const projectInputValue = document.getElementById("projectInput").value;
-            const userInputValue = document.getElementById("userInput").value;
             const subitemName = document.getElementById("subitemName").value;
+            const projectInputValue = document.getElementById("projectInput").value;
 
-            const projectOption = Array.from(document.querySelectorAll('#projectDatalist option'))
-                .find(opt => opt.value === projectInputValue);
-            const parentItemId = projectOption ? projectOption.dataset.id : null;
+            if (!selectedProjectId && projectInputValue.trim() !== "") {
+                const foundProj = allProjects.find(p => p.name.trim() === projectInputValue.trim());
+                if (foundProj) selectedProjectId = foundProj.id;
+            }
 
-            const userOption = Array.from(document.querySelectorAll('#userDatalist option'))
-                .find(opt => opt.value === userInputValue);
-            const assignedUserId = userOption ? userOption.dataset.id : null;
-
-            if (!subitemName.trim() || !parentItemId) {
+            if (!subitemName.trim() || !selectedProjectId) {
                 alert("אנא מלאי את שדות החובה וודאי שבחרת פרויקט קיים מתוך הרשימה");
                 return;
+            }
+
+            const userInputInputValue = document.getElementById("userInput").value;
+            if (!selectedUserId && userInputInputValue.trim() !== "") {
+                const foundUser = allUsers.find(u => u.name.trim() === userInputInputValue.trim());
+                if (foundUser) selectedUserId = foundUser.id;
             }
 
             const btnConfirm = document.getElementById("btnConfirm");
@@ -439,13 +550,13 @@
             spinner.style.display = "inline-block";
 
             let columnValuesSection = "";
-            if (assignedUserId) {
-                const columnData = JSON.stringify({ person: { personsAndTeams: [{ id: parseInt(assignedUserId), kind: "person" }] } });
+            if (selectedUserId) {
+                const columnData = JSON.stringify({ person: { personsAndTeams: [{ id: parseInt(selectedUserId), kind: "person" }] } });
                 columnValuesSection = `, column_values: ${JSON.stringify(columnData)}`;
             }
 
             const mutation = `mutation {
-                create_subitem (parent_item_id: ${parentItemId}, item_name: "${subitemName}"${columnValuesSection}) {
+                create_subitem (parent_item_id: ${selectedProjectId}, item_name: "${subitemName}"${columnValuesSection}) {
                     id
                 }
             }`;
@@ -468,6 +579,8 @@
                     document.getElementById("subitemName").value = "";
                     document.getElementById("projectInput").value = "";
                     document.getElementById("userInput").value = "";
+                    selectedProjectId = null;
+                    selectedUserId = null;
                 } else {
                     alert("שגיאה ביצירת תת-המשימה. ודאי שעמודת האחראי (person) קיימת ב-Subitems של לוח זה.");
                 }
